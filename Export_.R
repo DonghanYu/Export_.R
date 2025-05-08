@@ -676,6 +676,14 @@ calibrateInteractions <- function(subset, negativeControls) {
   return(subset)
 }
 
+# Safe density estimator to avoid errors when data length < 2
+safeDensity <- function(x, ...) {
+  if (length(x) < 2) {
+    warning("safeDensity: data length < 2, returning NA density")
+    return(list(x = NA_real_, y = NA_real_))
+  }
+  density(x, ...)
+}
 
 exportDiagnostics <- function(outputFolder,
                               exportFolder,
@@ -809,8 +817,9 @@ exportDiagnostics <- function(outputFolder,
       if (min(ps$propensityScore) < max(ps$propensityScore)) {
         ps <- CohortMethod:::computePreferenceScore(ps)
         
-        d1 <- density(ps$preferenceScore[ps$treatment == 1], from = 0, to = 1, n = 100)
-        d0 <- density(ps$preferenceScore[ps$treatment == 0], from = 0, to = 1, n = 100)
+        # Use safeDensity instead of density() directly
+        d1 <- safeDensity(ps$preferenceScore[ps$treatment == 1], from = 0, to = 1, n = 100)
+        d0 <- safeDensity(ps$preferenceScore[ps$treatment == 0], from = 0, to = 1, n = 100)
         
         result <- tibble::tibble(databaseId = databaseId,
                                  targetId = row$targetId,
